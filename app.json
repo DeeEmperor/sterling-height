@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Sterling Height Estate",
+    "slug": "sterling-height-estate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#722F37"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sterlingheight.estate"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#722F37"
+      },
+      "package": "com.sterlingheight.estate",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0f0f7a2a-4653-422a-b303-58cf52f71c69"
+      }
+    },
+    "owner": "cybrodave"
+  }
+}
