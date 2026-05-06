@@ -66,14 +66,14 @@ export const SecurityHomeScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.greeting}>{getGreeting()},</Text>
-          <Text style={styles.name}>{user?.name?.split(' ')[0]} 🛡️</Text>
+          <Text style={styles.name}>{user?.name?.split(' ')[0]}</Text>
           <Text style={styles.role}>Security Personnel</Text>
         </View>
 
         {/* Main Action - Large Verify Button */}
         <View style={styles.mainActionContainer}>
           <Button
-            title="🔍 Verify Visitor"
+            title="Verify Visitor"
             onPress={() => navigation.navigate('Verify')}
             size="large"
             fullWidth
@@ -101,7 +101,7 @@ export const SecurityHomeScreen: React.FC = () => {
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Button
-            title="📋 View Visitor Logs"
+            title="View Visitor Logs"
             onPress={() => navigation.navigate('Logs')}
             variant="outline"
             fullWidth

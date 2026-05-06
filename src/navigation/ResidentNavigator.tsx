@@ -5,7 +5,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   HomeScreen,
   VisitorHistoryScreen,
@@ -39,37 +40,24 @@ const HomeStack: React.FC = () => {
   );
 };
 
+// Icon mapping for each tab
+const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; unfocused: keyof typeof Ionicons.glyphMap }> = {
+  Home: { focused: 'home', unfocused: 'home-outline' },
+  Visitors: { focused: 'people', unfocused: 'people-outline' },
+  MyUnit: { focused: 'business', unfocused: 'business-outline' },
+  Announcements: { focused: 'megaphone', unfocused: 'megaphone-outline' },
+  Profile: { focused: 'person-circle', unfocused: 'person-circle-outline' },
+};
+
 export const ResidentNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => {
-          let icon = '';
-          
-          switch (route.name) {
-            case 'Home':
-              icon = '🏠';
-              break;
-            case 'Visitors':
-              icon = '👥';
-              break;
-            case 'MyUnit':
-              icon = '🏢';
-              break;
-            case 'Announcements':
-              icon = '📢';
-              break;
-            case 'Profile':
-              icon = '👤';
-              break;
-          }
-          
-          return (
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>
-              {icon}
-            </Text>
-          );
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = TAB_ICONS[route.name];
+          const iconName = focused ? icons.focused : icons.unfocused;
+          return <Ionicons name={iconName} size={size ?? 24} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
@@ -118,12 +106,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
-  },
-  tabIcon: {
-    fontSize: 24,
-  },
-  tabIconFocused: {
-    transform: [{ scale: 1.1 }],
   },
 });
 

@@ -10,7 +10,9 @@ import {
   SafeAreaView,
   ScrollView,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AlertCard, AnnouncementCard, VisitorCard, Loading } from '../../components';
 import { colors } from '../../theme/colors';
@@ -160,22 +162,22 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
             <QuickActionButton
-              icon="👤"
+              icon="person-add"
               label="Add Visitor"
               onPress={() => navigation.navigate('CreateVisitor')}
             />
             <QuickActionButton
-              icon="📋"
+              icon="people"
               label="My Visitors"
               onPress={() => navigation.navigate('Visitors')}
             />
             <QuickActionButton
-              icon="🏠"
+              icon="home"
               label="My Unit"
               onPress={() => navigation.navigate('MyUnit')}
             />
             <QuickActionButton
-              icon="📢"
+              icon="megaphone"
               label="News"
               onPress={() => navigation.navigate('Announcements')}
             />
@@ -188,16 +190,16 @@ export const HomeScreen: React.FC = () => {
 
 // Quick Action Button Component
 const QuickActionButton: React.FC<{
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
 }> = ({ icon, label, onPress }) => (
-  <View style={styles.quickActionWrapper}>
+  <TouchableOpacity style={styles.quickActionWrapper} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.quickAction}>
-      <Text style={styles.quickActionIcon} onPress={onPress}>{icon}</Text>
+      <Ionicons name={icon} size={28} color={colors.primary} />
     </View>
     <Text style={styles.quickActionLabel}>{label}</Text>
-  </View>
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
@@ -256,9 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  quickActionIcon: {
-    fontSize: 28,
-  },
+
   quickActionLabel: {
     fontSize: 12,
     color: colors.textSecondary,
