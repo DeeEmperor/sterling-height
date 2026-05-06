@@ -11,7 +11,7 @@ import {
   RefreshControl,
   ScrollView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Button, Card, Loading } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius, shadows } from '../../theme';
@@ -37,9 +37,11 @@ export const SecurityHomeScreen: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

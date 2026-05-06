@@ -2,7 +2,8 @@
  * Announcements Screen
  * Lists all estate announcements
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -38,9 +39,11 @@ export const AnnouncementsScreen: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, [loadAnnouncements]);
+  useFocusEffect(
+    useCallback(() => {
+      loadAnnouncements();
+    }, [loadAnnouncements])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

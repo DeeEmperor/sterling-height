@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AlertCard, AnnouncementCard, VisitorCard, Loading } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme';
@@ -70,9 +70,11 @@ export const HomeScreen: React.FC = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

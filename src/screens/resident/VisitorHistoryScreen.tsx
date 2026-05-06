@@ -12,7 +12,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { VisitorCard, Loading, EmptyState, Button } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme';
@@ -40,9 +40,11 @@ export const VisitorHistoryScreen: React.FC = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    loadVisitors();
-  }, [loadVisitors]);
+  useFocusEffect(
+    useCallback(() => {
+      loadVisitors();
+    }, [loadVisitors])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

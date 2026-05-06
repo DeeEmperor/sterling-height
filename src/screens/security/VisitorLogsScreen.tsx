@@ -2,7 +2,8 @@
  * Visitor Logs Screen
  * Lists all visitor entries for security review
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -33,9 +34,11 @@ export const VisitorLogsScreen: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadVisitors();
-  }, [loadVisitors]);
+  useFocusEffect(
+    useCallback(() => {
+      loadVisitors();
+    }, [loadVisitors])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
