@@ -1,48 +1,47 @@
 /**
  * Unit Service
- * Handles unit/property and estate dues operations
- * Structured for easy replacement with real API
+ * Handles unit/property and estate dues operations using real API
  */
 import { Unit, EstateDue } from '../types';
-import { getUnitByResidentId, getDuesByUnitId, getUnitById } from '../data/mockUnits';
-
-// Simulated delay for API calls
-const API_DELAY = 500;
+import apiClient from './apiClient';
 
 /**
- * Get unit for a resident
+ * Get unit for a resident (uses /units/me)
  */
-export const getUnitForResident = async (residentId: string): Promise<Unit | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getUnitByResidentId(residentId) || null);
-    }, API_DELAY);
-  });
+export const getUnitForResident = async (residentId: string | null): Promise<Unit | null> => {
+  try {
+    const response = await apiClient.get('/units/me');
+    return response.data.unit || null;
+  } catch (error) {
+    console.error('Failed to get unit:', error);
+    return null;
+  }
 };
 
 /**
- * Get unit by ID
+ * Get unit by ID (fallback to /units/me as resident can only see their own unit)
  */
 export const getUnit = async (unitId: string): Promise<Unit | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getUnitById(unitId) || null);
-    }, API_DELAY / 2);
-  });
+  try {
+    const response = await apiClient.get('/units/me');
+    return response.data.unit || null;
+  } catch (error) {
+    console.error('Failed to get unit:', error);
+    return null;
+  }
 };
 
 /**
  * Get estate dues for a unit
  */
 export const getEstateDues = async (unitId: string): Promise<EstateDue[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const dues = getDuesByUnitId(unitId);
-      // Sort by due date
-      dues.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      resolve(dues);
-    }, API_DELAY);
-  });
+  try {
+    const response = await apiClient.get(`/units/${unitId}/dues`);
+    return response.data.dues || [];
+  } catch (error) {
+    console.error('Failed to get dues:', error);
+    return [];
+  }
 };
 
 /**
@@ -68,13 +67,13 @@ export const isRentExpiringSoon = (expiryDate: string): boolean => {
  * Get overdue dues count
  */
 export const getOverdueDuesCount = async (unitId: string): Promise<number> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const dues = getDuesByUnitId(unitId);
-      const overdueCount = dues.filter(d => d.status === 'overdue').length;
-      resolve(overdueCount);
-    }, API_DELAY / 2);
-  });
+  try {
+    const dues = await getEstateDues(unitId);
+    return dues.filter(d => d.status === 'overdue').length;
+  } catch (error) {
+    console.error('Failed to get overdue dues count:', error);
+    return 0;
+  }
 };
 
 export default {

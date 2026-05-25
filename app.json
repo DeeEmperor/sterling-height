@@ -33,6 +33,16 @@
         "projectId": "0f0f7a2a-4653-422a-b303-58cf52f71c69"
       }
     },
-    "owner": "cybrodave"
+    "owner": "cybrodave",
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Sterling Height to access your camera for scanning QR codes",
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ]
   }
 }

@@ -13,6 +13,8 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
+  Modal,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
@@ -23,6 +25,38 @@ import { useAuth } from '../../context';
 import { visitorService } from '../../services';
 import { formatDate, formatTime } from '../../utils/helpers';
 import { Visitor } from '../../types';
+
+const DateTimePicker = Platform.OS !== 'web' ? require('@react-native-community/datetimepicker').default : null;
+
+// Helper functions for date/time conversion
+const formatDateString = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const formatTimeString = (date: Date): string => {
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
+const parseDateString = (str: string): Date => {
+  if (!str) return new Date();
+  const [year, month, day] = str.split('-').map(Number);
+  const d = new Date();
+  d.setFullYear(year, month - 1, day);
+  return d;
+};
+
+const parseTimeString = (str: string): Date => {
+  if (!str) return new Date();
+  const [hours, minutes] = str.split(':').map(Number);
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  return d;
+};
 
 export const CreateVisitorScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -36,6 +70,11 @@ export const CreateVisitorScreen: React.FC = () => {
   const [timeStart, setTimeStart] = useState('');
   const [timeEnd, setTimeEnd] = useState('');
   const [carPlate, setCarPlate] = useState('');
+
+  // Picker show states (for mobile)
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Form errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -109,6 +148,9 @@ export const CreateVisitorScreen: React.FC = () => {
     setTimeEnd('');
     setCarPlate('');
     setErrors({});
+    setShowDatePicker(false);
+    setShowStartTimePicker(false);
+    setShowEndTimePicker(false);
   };
 
   // Success view
@@ -134,6 +176,22 @@ export const CreateVisitorScreen: React.FC = () => {
             >
               <Text style={styles.copyButtonText}>📋 Copy Code</Text>
             </TouchableOpacity>
+          </Card>
+
+          <Card style={styles.qrCard}>
+            <Text style={styles.qrLabel}>Pass QR Code</Text>
+            <View style={styles.qrWrapper}>
+              <Image
+                source={{
+                  uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${createdVisitor.accessCode}`,
+                }}
+                style={styles.qrImage}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.qrHelpText}>
+              Visitors can scan this at the gate for instant entry
+            </Text>
           </Card>
 
           <Card style={styles.detailsCard}>
@@ -192,37 +250,82 @@ export const CreateVisitorScreen: React.FC = () => {
             autoCapitalize="words"
           />
 
-          <Input
-            label="Visit Date *"
-            placeholder="YYYY-MM-DD (e.g., 2026-01-08)"
-            value={visitDate}
-            onChangeText={setVisitDate}
-            error={errors.visitDate}
-            keyboardType="numbers-and-punctuation"
-          />
+          {Platform.OS === 'web' ? (
+            <Input
+              label="Visit Date *"
+              placeholder="YYYY-MM-DD (e.g., 2026-01-08)"
+              value={visitDate}
+              onChangeText={setVisitDate}
+              error={errors.visitDate}
+              type="date"
+            />
+          ) : (
+            <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
+              <View pointerEvents="none">
+                <Input
+                  label="Visit Date *"
+                  placeholder="Select Date"
+                  value={visitDate}
+                  error={errors.visitDate}
+                  editable={false}
+                />
+              </View>
+            </TouchableOpacity>
+          )}
 
-          <View style={styles.timeRow}>
-            <View style={styles.timeInput}>
-              <Input
-                label="Start Time *"
-                placeholder="HH:MM"
-                value={timeStart}
-                onChangeText={setTimeStart}
-                error={errors.timeStart}
-                keyboardType="numbers-and-punctuation"
-              />
+          {Platform.OS === 'web' ? (
+            <View style={styles.timeRow}>
+              <View style={styles.timeInput}>
+                <Input
+                  label="Start Time *"
+                  placeholder="HH:MM"
+                  value={timeStart}
+                  onChangeText={setTimeStart}
+                  error={errors.timeStart}
+                  type="time"
+                />
+              </View>
+              <View style={styles.timeInput}>
+                <Input
+                  label="End Time *"
+                  placeholder="HH:MM"
+                  value={timeEnd}
+                  onChangeText={setTimeEnd}
+                  error={errors.timeEnd}
+                  type="time"
+                />
+              </View>
             </View>
-            <View style={styles.timeInput}>
-              <Input
-                label="End Time *"
-                placeholder="HH:MM"
-                value={timeEnd}
-                onChangeText={setTimeEnd}
-                error={errors.timeEnd}
-                keyboardType="numbers-and-punctuation"
-              />
+          ) : (
+            <View style={styles.timeRow}>
+              <View style={styles.timeInput}>
+                <TouchableOpacity onPress={() => setShowStartTimePicker(true)} activeOpacity={0.7}>
+                  <View pointerEvents="none">
+                    <Input
+                      label="Start Time *"
+                      placeholder="Select Start"
+                      value={timeStart ? formatTime(timeStart) : ''}
+                      error={errors.timeStart}
+                      editable={false}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.timeInput}>
+                <TouchableOpacity onPress={() => setShowEndTimePicker(true)} activeOpacity={0.7}>
+                  <View pointerEvents="none">
+                    <Input
+                      label="End Time *"
+                      placeholder="Select End"
+                      value={timeEnd ? formatTime(timeEnd) : ''}
+                      error={errors.timeEnd}
+                      editable={false}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          )}
 
           <Input
             label="Car Plate Number"
@@ -241,6 +344,149 @@ export const CreateVisitorScreen: React.FC = () => {
             style={styles.submitButton}
           />
         </ScrollView>
+
+        {Platform.OS !== 'web' && (
+          <>
+            {/* Date Picker Modal for iOS / Dialog for Android */}
+            {Platform.OS === 'ios' ? (
+              <Modal
+                visible={showDatePicker}
+                transparent={true}
+                animationType="slide"
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                        <Text style={styles.modalCloseText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Select Date</Text>
+                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                        <Text style={styles.modalDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={visitDate ? parseDateString(visitDate) : new Date()}
+                      mode="date"
+                      display="spinner"
+                      onChange={(event: any, date?: Date) => {
+                        if (date) setVisitDate(formatDateString(date));
+                      }}
+                    />
+                  </View>
+                </View>
+              </Modal>
+            ) : (
+              showDatePicker && (
+                <DateTimePicker
+                  value={visitDate ? parseDateString(visitDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event: any, date?: Date) => {
+                    setShowDatePicker(false);
+                    if (date && event.type !== 'dismissed') {
+                      setVisitDate(formatDateString(date));
+                    }
+                  }}
+                />
+              )
+            )}
+            
+            {/* Start Time Picker */}
+            {Platform.OS === 'ios' ? (
+              <Modal
+                visible={showStartTimePicker}
+                transparent={true}
+                animationType="slide"
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={() => setShowStartTimePicker(false)}>
+                        <Text style={styles.modalCloseText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>Start Time</Text>
+                      <TouchableOpacity onPress={() => setShowStartTimePicker(false)}>
+                        <Text style={styles.modalDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={timeStart ? parseTimeString(timeStart) : new Date()}
+                      mode="time"
+                      display="spinner"
+                      is24Hour={true}
+                      onChange={(event: any, date?: Date) => {
+                        if (date) setTimeStart(formatTimeString(date));
+                      }}
+                    />
+                  </View>
+                </View>
+              </Modal>
+            ) : (
+              showStartTimePicker && (
+                <DateTimePicker
+                  value={timeStart ? parseTimeString(timeStart) : new Date()}
+                  mode="time"
+                  display="default"
+                  is24Hour={true}
+                  onChange={(event: any, date?: Date) => {
+                    setShowStartTimePicker(false);
+                    if (date && event.type !== 'dismissed') {
+                      setTimeStart(formatTimeString(date));
+                    }
+                  }}
+                />
+              )
+            )}
+
+            {/* End Time Picker */}
+            {Platform.OS === 'ios' ? (
+              <Modal
+                visible={showEndTimePicker}
+                transparent={true}
+                animationType="slide"
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                      <TouchableOpacity onPress={() => setShowEndTimePicker(false)}>
+                        <Text style={styles.modalCloseText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.modalTitle}>End Time</Text>
+                      <TouchableOpacity onPress={() => setShowEndTimePicker(false)}>
+                        <Text style={styles.modalDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={timeEnd ? parseTimeString(timeEnd) : new Date()}
+                      mode="time"
+                      display="spinner"
+                      is24Hour={true}
+                      onChange={(event: any, date?: Date) => {
+                        if (date) setTimeEnd(formatTimeString(date));
+                      }}
+                    />
+                  </View>
+                </View>
+              </Modal>
+            ) : (
+              showEndTimePicker && (
+                <DateTimePicker
+                  value={timeEnd ? parseTimeString(timeEnd) : new Date()}
+                  mode="time"
+                  display="default"
+                  is24Hour={true}
+                  onChange={(event: any, date?: Date) => {
+                    setShowEndTimePicker(false);
+                    if (date && event.type !== 'dismissed') {
+                      setTimeEnd(formatTimeString(date));
+                    }
+                  }}
+                />
+              )
+            )}
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -285,6 +531,40 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.md,
+  },
+  // Modal styles for iOS picker
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  modalCloseText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  modalDoneText: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: '600',
   },
   // Success styles
   successContent: {
@@ -364,6 +644,37 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     marginTop: spacing.sm,
+  },
+  qrCard: {
+    width: '100%',
+    alignItems: 'center',
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  qrLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  qrWrapper: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginBottom: spacing.sm,
+    ...shadows.small,
+  },
+  qrImage: {
+    width: 180,
+    height: 180,
+  },
+  qrHelpText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });
 

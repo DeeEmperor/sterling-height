@@ -1,61 +1,60 @@
 /**
  * Announcement Service
- * Handles announcement retrieval
- * Structured for easy replacement with real API
+ * Handles announcement retrieval using real API
  */
 import { Announcement } from '../types';
-import {
-  getAllAnnouncements,
-  getLatestAnnouncement,
-  getAnnouncementById,
-  getUrgentAnnouncements,
-} from '../data/mockAnnouncements';
-
-// Simulated delay for API calls
-const API_DELAY = 500;
+import apiClient from './apiClient';
 
 /**
  * Get all announcements
  */
 export const getAnnouncements = async (): Promise<Announcement[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getAllAnnouncements());
-    }, API_DELAY);
-  });
+  try {
+    const response = await apiClient.get('/announcements');
+    return response.data.announcements || [];
+  } catch (error) {
+    console.error('Failed to get announcements:', error);
+    return [];
+  }
 };
 
 /**
  * Get latest announcement
  */
 export const getLatest = async (): Promise<Announcement | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getLatestAnnouncement() || null);
-    }, API_DELAY / 2);
-  });
+  try {
+    const response = await apiClient.get('/announcements/latest');
+    return response.data.announcement || null;
+  } catch (error) {
+    console.error('Failed to get latest announcement:', error);
+    return null;
+  }
 };
 
 /**
  * Get announcement by ID
  */
 export const getById = async (id: string): Promise<Announcement | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getAnnouncementById(id) || null);
-    }, API_DELAY / 2);
-  });
+  try {
+    const announcements = await getAnnouncements();
+    return announcements.find(a => a.id === id) || null;
+  } catch (error) {
+    console.error('Failed to get announcement by ID:', error);
+    return null;
+  }
 };
 
 /**
  * Get urgent announcements
  */
 export const getUrgent = async (): Promise<Announcement[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getUrgentAnnouncements());
-    }, API_DELAY / 2);
-  });
+  try {
+    const announcements = await getAnnouncements();
+    return announcements.filter(a => a.priority === 'urgent');
+  } catch (error) {
+    console.error('Failed to get urgent announcements:', error);
+    return [];
+  }
 };
 
 export default {

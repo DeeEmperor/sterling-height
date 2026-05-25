@@ -25,11 +25,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Load initial notifications
-  useEffect(() => {
-    const initialNotifications = notificationService.getNotifications();
-    setNotifications(initialNotifications);
-    setUnreadCount(notificationService.getUnreadCount());
+  const fetchNotifications = useCallback(async () => {
+    const { notifications: fetched, unreadCount: count } = await notificationService.getNotifications();
+    setNotifications(fetched);
+    setUnreadCount(count);
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   // Add notification
   const addNotification = useCallback((
@@ -46,17 +50,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   // Mark as read
-  const markAsRead = useCallback((id: string) => {
-    notificationService.markAsRead(id);
+  const markAsRead = useCallback(async (id: string) => {
+    await notificationService.markAsRead(id);
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
-    setUnreadCount(notificationService.getUnreadCount());
+    setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
 
   // Mark all as read
-  const markAllAsRead = useCallback(() => {
-    notificationService.markAllAsRead();
+  const markAllAsRead = useCallback(async () => {
+    await notificationService.markAllAsRead();
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   }, []);

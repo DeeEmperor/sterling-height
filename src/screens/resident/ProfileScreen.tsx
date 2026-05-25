@@ -1,7 +1,3 @@
-/**
- * Resident Profile Screen
- * Displays user info and logout option
- */
 import React from 'react';
 import {
   View,
@@ -10,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { Card, Button } from '../../components';
 import { colors } from '../../theme/colors';
@@ -22,6 +19,7 @@ import { Unit } from '../../types';
 export const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
   const [unit, setUnit] = React.useState<Unit | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   React.useEffect(() => {
     const loadUnit = async () => {
@@ -33,22 +31,39 @@ export const ProfileScreen: React.FC = () => {
     loadUnit();
   }, [user]);
 
+  const performLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => logout(),
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      // Alert.alert is a no-op on web, use window.confirm instead
+      if (window.confirm('Are you sure you want to logout?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: performLogout,
+          },
+        ]
+      );
+    }
   };
 
   if (!user) return null;
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,12 +106,13 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Logout Button */}
         <Button
-          title="Logout"
+          title={isLoggingOut ? 'Logging out...' : 'Logout'}
           onPress={handleLogout}
           variant="danger"
           fullWidth
           size="large"
           style={styles.logoutButton}
+          disabled={isLoggingOut}
         />
       </ScrollView>
     </SafeAreaView>

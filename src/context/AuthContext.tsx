@@ -8,6 +8,8 @@ import { User, AuthContextType } from '../types';
 import { authService } from '../services';
 
 const AUTH_STORAGE_KEY = '@sterling_height_auth';
+const TOKEN_STORAGE_KEY = '@sterling_height_token';
+import { DeviceEventEmitter } from 'react-native';
 
 // Default context value
 const defaultContextValue: AuthContextType = {
@@ -26,6 +28,21 @@ const AuthContext = createContext<AuthContextType>(defaultContextValue);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Logout function
+  const logout = useCallback(async () => {
+    setUser(null);
+    await saveUser(null);
+    await saveToken(null);
+  }, []);
+
+  // Listen for unauthorized events globally
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('UNAUTHORIZED', () => {
+      logout();
+    });
+    return () => subscription.remove();
+  }, [logout]);
 
   // Load saved user on mount
   useEffect(() => {
@@ -58,6 +75,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const saveToken = async (token: string | null) => {
+    try {
+      if (token) {
+        await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } else {
+        await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error('Error saving token:', error);
+    }
+  };
+
   // Login function (initiates OTP)
   const login = useCallback(async (phone: string) => {
     const result = await authService.sendOtp(phone);
@@ -69,18 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Verify OTP and complete login
   const verifyOtp = useCallback(async (phone: string, otp: string) => {
     const result = await authService.verifyOtp(phone, otp);
-    if (!result.success || !result.user) {
+    if (!result.success || !result.user || !result.token) {
       throw new Error(result.message);
     }
     
     setUser(result.user);
     await saveUser(result.user);
-  }, []);
-
-  // Logout function
-  const logout = useCallback(async () => {
-    setUser(null);
-    await saveUser(null);
+    await saveToken(result.token);
   }, []);
 
   const value: AuthContextType = {

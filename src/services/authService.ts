@@ -1,95 +1,49 @@
 /**
  * Authentication Service
- * Handles mock authentication flow (OTP send/verify)
- * Structured for easy replacement with real API
+ * Handles authentication flow (OTP send/verify) using real API
  */
 import { User } from '../types';
-import { findUserByPhone } from '../data/mockUsers';
-
-// Simulated delay for API calls
-const API_DELAY = 1000;
+import apiClient from './apiClient';
 
 /**
- * Simulate sending OTP to phone number
- * In production, this would call an SMS gateway
+ * Send OTP to phone number
  */
 export const sendOtp = async (phone: string): Promise<{ success: boolean; message: string }> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Check if phone number is valid format (basic validation)
-      const phoneRegex = /^(\+234|0)[0-9]{10}$/;
-      const normalizedPhone = phone.replace(/\s/g, '');
-      
-      if (!phoneRegex.test(normalizedPhone)) {
-        resolve({
-          success: false,
-          message: 'Invalid phone number format',
-        });
-        return;
-      }
-
-      // Mock OTP sent successfully
-      console.log(`[Mock] OTP sent to ${phone}: 123456`);
-      resolve({
-        success: true,
-        message: 'OTP sent successfully',
-      });
-    }, API_DELAY);
-  });
+  try {
+    const response = await apiClient.post('/auth/send-otp', { phone });
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to send OTP',
+    };
+  }
 };
 
 /**
  * Verify OTP code
- * In development, any 6-digit code works
  */
 export const verifyOtp = async (
   phone: string, 
   otp: string
-): Promise<{ success: boolean; user?: User; message: string }> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Basic OTP validation (must be 6 digits)
-      if (!/^\d{6}$/.test(otp)) {
-        resolve({
-          success: false,
-          message: 'Invalid OTP format. Must be 6 digits.',
-        });
-        return;
-      }
-
-      // Find user by phone
-      const user = findUserByPhone(phone);
-      
-      if (!user) {
-        // In a real app, you might create a new user here
-        // For this mock, we require pre-existing users
-        resolve({
-          success: false,
-          message: 'User not found. Please contact estate management.',
-        });
-        return;
-      }
-
-      // Mock verification success (any 6 digits work)
-      resolve({
-        success: true,
-        user,
-        message: 'Verification successful',
-      });
-    }, API_DELAY);
-  });
+): Promise<{ success: boolean; user?: User; token?: string; message: string }> => {
+  try {
+    const response = await apiClient.post('/auth/verify-otp', { phone, otp });
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Invalid OTP',
+    };
+  }
 };
 
 /**
- * Get user by phone number
+ * Get user by phone number (mock wrapper if needed somewhere, typically backend returns full user on OTP verify)
+ * If we really need this, we would make a /users/me endpoint. For now, return null as we get user on verify.
  */
 export const getUserByPhone = async (phone: string): Promise<User | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const user = findUserByPhone(phone);
-      resolve(user || null);
-    }, API_DELAY / 2);
-  });
+  return null;
 };
 
 export default {

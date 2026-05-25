@@ -1,22 +1,52 @@
 /**
  * Notification Service
- * Handles mock push notifications
- * Structured for easy replacement with real push notification service
+ * Handles notifications using real API
  */
 import { Notification, NotificationType } from '../types';
-
-// In-memory notification storage
-let notifications: Notification[] = [];
+import apiClient from './apiClient';
 
 /**
- * Generate unique notification ID
+ * Get all notifications for the authenticated user
+ * Returns both the list of notifications and the unread count
  */
-const generateNotificationId = (): string => {
-  return `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+export const getNotifications = async (): Promise<{ notifications: Notification[]; unreadCount: number }> => {
+  try {
+    const response = await apiClient.get('/notifications');
+    return {
+      notifications: response.data.notifications || [],
+      unreadCount: response.data.unreadCount || 0,
+    };
+  } catch (error) {
+    console.error('Failed to get notifications:', error);
+    return { notifications: [], unreadCount: 0 };
+  }
 };
 
 /**
- * Add a new notification
+ * Mark a single notification as read
+ */
+export const markAsRead = async (id: string): Promise<void> => {
+  try {
+    await apiClient.patch('/notifications/read', { ids: [id] });
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+  }
+};
+
+/**
+ * Mark all notifications as read
+ */
+export const markAllAsRead = async (): Promise<void> => {
+  try {
+    await apiClient.patch('/notifications/read', { all: true });
+  } catch (error) {
+    console.error('Failed to mark all notifications as read:', error);
+  }
+};
+
+/**
+ * Stub for addNotification to prevent breaking existing UI code
+ * In a real app, notifications are created by the backend.
  */
 export const addNotification = (
   type: NotificationType,
@@ -24,8 +54,8 @@ export const addNotification = (
   message: string,
   data?: Record<string, unknown>
 ): Notification => {
-  const notification: Notification = {
-    id: generateNotificationId(),
+  return {
+    id: `temp-${Date.now()}`,
     type,
     title,
     message,
@@ -33,125 +63,19 @@ export const addNotification = (
     read: false,
     createdAt: new Date().toISOString(),
   };
-
-  notifications = [notification, ...notifications];
-  return notification;
 };
 
 /**
- * Get all notifications
- */
-export const getNotifications = (): Notification[] => {
-  return [...notifications];
-};
-
-/**
- * Get unread count
- */
-export const getUnreadCount = (): number => {
-  return notifications.filter(n => !n.read).length;
-};
-
-/**
- * Mark notification as read
- */
-export const markAsRead = (id: string): void => {
-  const index = notifications.findIndex(n => n.id === id);
-  if (index !== -1) {
-    notifications[index] = { ...notifications[index], read: true };
-  }
-};
-
-/**
- * Mark all as read
- */
-export const markAllAsRead = (): void => {
-  notifications = notifications.map(n => ({ ...n, read: true }));
-};
-
-/**
- * Clear all notifications
+ * Stub for clearNotifications
  */
 export const clearNotifications = (): void => {
-  notifications = [];
+  // Backend doesn't support deleting notifications in MVP
 };
-
-/**
- * Simulate visitor check-in notification
- */
-export const notifyVisitorCheckIn = (visitorName: string): Notification => {
-  return addNotification(
-    'visitor_checkin',
-    'Visitor Arrived',
-    `${visitorName} has checked in at the gate.`,
-    { screen: 'VisitorHistory' }
-  );
-};
-
-/**
- * Simulate rent expiry notification
- */
-export const notifyRentExpiry = (daysLeft: number): Notification => {
-  return addNotification(
-    'rent_expiry',
-    'Rent Expiry Reminder',
-    `Your rent expires in ${daysLeft} days. Please contact management for renewal.`,
-    { screen: 'MyUnit' }
-  );
-};
-
-/**
- * Simulate estate dues notification
- */
-export const notifyEstateDues = (dueType: string, amount: number): Notification => {
-  return addNotification(
-    'estate_dues',
-    'Estate Dues Reminder',
-    `Your ${dueType} of ₦${amount.toLocaleString()} is due. Please make payment.`,
-    { screen: 'MyUnit' }
-  );
-};
-
-/**
- * Simulate new announcement notification
- */
-export const notifyAnnouncement = (title: string): Notification => {
-  return addNotification(
-    'announcement',
-    'New Announcement',
-    title,
-    { screen: 'Announcements' }
-  );
-};
-
-// Initialize with some sample notifications
-const initializeNotifications = () => {
-  addNotification(
-    'announcement',
-    'New Announcement',
-    'Water Supply Maintenance scheduled for January 10th',
-    { screen: 'Announcements' }
-  );
-  addNotification(
-    'visitor_checkin',
-    'Visitor Arrived',
-    'Kunle Adesanya has checked in at the gate.',
-    { screen: 'VisitorHistory' }
-  );
-};
-
-// Initialize on module load
-initializeNotifications();
 
 export default {
-  addNotification,
   getNotifications,
-  getUnreadCount,
   markAsRead,
   markAllAsRead,
+  addNotification,
   clearNotifications,
-  notifyVisitorCheckIn,
-  notifyRentExpiry,
-  notifyEstateDues,
-  notifyAnnouncement,
 };

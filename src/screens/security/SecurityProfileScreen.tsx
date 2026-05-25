@@ -2,7 +2,7 @@
  * Security Profile Screen
  * Displays security personnel info and logout option
  */
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { Card, Button } from '../../components';
 import { colors } from '../../theme/colors';
@@ -19,20 +20,36 @@ import { formatPhoneNumber, getInitials } from '../../utils/helpers';
 
 export const SecurityProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const performLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => logout(),
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to logout?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: performLogout,
+          },
+        ]
+      );
+    }
   };
 
   if (!user) return null;
@@ -70,12 +87,13 @@ export const SecurityProfileScreen: React.FC = () => {
 
         {/* Logout Button */}
         <Button
-          title="Logout"
+          title={isLoggingOut ? 'Logging out...' : 'Logout'}
           onPress={handleLogout}
           variant="danger"
           fullWidth
           size="large"
           style={styles.logoutButton}
+          disabled={isLoggingOut}
         />
       </ScrollView>
     </SafeAreaView>
