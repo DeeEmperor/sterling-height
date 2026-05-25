@@ -10,3 +10,4 @@ export { AnnouncementCard } from './AnnouncementCard';
 export { StatusBadge } from './StatusBadge';
 export { Loading } from './Loading';
 export { EmptyState } from './EmptyState';
+export { EventPassCard } from './EventPassCard';

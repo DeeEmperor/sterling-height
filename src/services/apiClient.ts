@@ -77,8 +77,13 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     if (error.response) {
-      console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response.status}`);
-      console.error(`[API Error Data]:`, JSON.stringify(error.response.data));
+      if (error.response.status === 404) {
+        // Log 404 as normal info to avoid triggering development red error screen on device
+        console.log(`[API Info] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: 404 (Not Found / Expected)`);
+      } else {
+        console.warn(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response.status}`);
+        console.warn(`[API Error Data]:`, JSON.stringify(error.response.data));
+      }
       
       if (error.response.status === 401) {
         // Handle unauthorized errors (e.g., clear storage and redirect to login)
@@ -86,9 +91,9 @@ apiClient.interceptors.response.use(
         DeviceEventEmitter.emit('UNAUTHORIZED');
       }
     } else if (error.request) {
-      console.error(`[API Network Error] No response received for ${error.config?.method?.toUpperCase()} ${error.config?.url}. Is the backend running and accessible at ${error.config?.baseURL}?`);
+      console.warn(`[API Network Error] No response received for ${error.config?.method?.toUpperCase()} ${error.config?.url}. Is the backend running and accessible at ${error.config?.baseURL}?`);
     } else {
-      console.error(`[API Setup Error]`, error.message);
+      console.warn(`[API Setup Error]`, error.message);
     }
     return Promise.reject(error);
   }

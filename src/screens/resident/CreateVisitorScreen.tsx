@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  Share,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
@@ -140,6 +141,17 @@ export const CreateVisitorScreen: React.FC = () => {
     }
   };
 
+  const sharePass = async () => {
+    if (createdVisitor) {
+      try {
+        const message = `🏘️ Sterling Height Estate — Visitor Pass\n\nHi ${createdVisitor.name}!\n\nYou have a visitor pass scheduled.\n\n📅 Date: ${formatDate(createdVisitor.visitDate)}\n🕐 Time: ${formatTime(createdVisitor.timeWindowStart)} - ${formatTime(createdVisitor.timeWindowEnd)}\n🔑 Access Code: ${createdVisitor.accessCode}\n\n📱 Scan QR Code at gate:\nhttps://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${createdVisitor.accessCode}\n\nShow this code or QR code to security at the gate.`;
+        await Share.share({ message });
+      } catch (error) {
+        console.error('Error sharing visitor pass:', error);
+      }
+    }
+  };
+
   const createAnother = () => {
     setCreatedVisitor(null);
     setName('');
@@ -207,6 +219,12 @@ export const CreateVisitorScreen: React.FC = () => {
           </Card>
 
           <View style={styles.buttonGroup}>
+            <Button
+              title="📤 Share Pass"
+              onPress={sharePass}
+              variant="primary"
+              fullWidth
+            />
             <Button
               title="Add Another Visitor"
               onPress={createAnother}

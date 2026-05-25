@@ -11,6 +11,7 @@ import {
   HomeScreen,
   VisitorHistoryScreen,
   CreateVisitorScreen,
+  CreateEventPassScreen,
   MyUnitScreen,
   AnnouncementsScreen,
   ProfileScreen,
@@ -26,6 +27,7 @@ const VisitorsStack: React.FC = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="VisitorsList" component={VisitorHistoryScreen} />
       <Stack.Screen name="CreateVisitor" component={CreateVisitorScreen} />
+      <Stack.Screen name="CreateEventPass" component={CreateEventPassScreen} />
     </Stack.Navigator>
   );
 };
@@ -36,6 +38,7 @@ const HomeStack: React.FC = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="CreateVisitor" component={CreateVisitorScreen} />
+      <Stack.Screen name="CreateEventPass" component={CreateEventPassScreen} />
     </Stack.Navigator>
   );
 };

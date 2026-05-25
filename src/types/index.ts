@@ -59,6 +59,34 @@ export interface Visitor {
   createdAt: string;
 }
 
+// Event Pass model
+export interface EventPass {
+  id: string;
+  residentId: string;
+  residentName: string;
+  unitNumber: string;
+  eventName: string;
+  visitDate: string;
+  timeWindowStart: string;
+  timeWindowEnd: string;
+  maxEntries: number;
+  entriesUsed: number;
+  accessCode: string;
+  status: 'active' | 'exhausted';
+  createdAt: string;
+}
+
+// Event Pass Log model
+export interface EventPassLog {
+  id: string;
+  eventPassId: string;
+  checkInTime: string;
+  note?: string;
+  eventName: string;
+  residentName: string;
+  unitNumber: string;
+}
+
 // Announcement priority
 export type AnnouncementPriority = 'normal' | 'urgent';
 
@@ -118,6 +146,7 @@ export type AuthStackParamList = {
 export type ResidentStackParamList = {
   ResidentTabs: undefined;
   CreateVisitor: undefined;
+  CreateEventPass: undefined;
   VisitorDetail: { visitorId: string };
   AnnouncementDetail: { announcementId: string };
 };

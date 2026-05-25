@@ -3,7 +3,7 @@
  * Displays visitor information with status badge
  */
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { colors } from '../theme/colors';
 import { borderRadius, spacing, shadows } from '../theme';
 import { Visitor, VisitorStatus } from '../types';
@@ -34,6 +34,15 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({
   };
 
   const statusStyle = getStatusStyle(visitor.status);
+
+  const sharePass = async () => {
+    try {
+      const message = `🏘️ Sterling Height Estate — Visitor Pass\n\nHi ${visitor.name}!\n\nYou have a visitor pass scheduled.\n\n📅 Date: ${formatDate(visitor.visitDate)}\n🕐 Time: ${formatTime(visitor.timeWindowStart)} - ${formatTime(visitor.timeWindowEnd)}\n🔑 Access Code: ${visitor.accessCode}\n\n📱 Scan QR Code at gate:\nhttps://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${visitor.accessCode}\n\nShow this code or QR code to security at the gate.`;
+      await Share.share({ message });
+    } catch (error) {
+      console.error('Error sharing visitor pass:', error);
+    }
+  };
 
   const content = (
     <View style={styles.container}>
@@ -67,6 +76,13 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({
         <View style={styles.codeContainer}>
           <Text style={styles.codeLabel}>Access Code</Text>
           <Text style={styles.code}>{visitor.accessCode}</Text>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={sharePass}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.shareButtonText}>📤 Share Pass</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -137,6 +153,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
     letterSpacing: 4,
+  },
+  shareButton: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

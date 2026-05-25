@@ -169,6 +169,11 @@ export const HomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('CreateVisitor')}
             />
             <QuickActionButton
+              icon="calendar"
+              label="Event Pass"
+              onPress={() => navigation.navigate('CreateEventPass')}
+            />
+            <QuickActionButton
               icon="people"
               label="My Visitors"
               onPress={() => navigation.navigate('Visitors')}
@@ -245,11 +250,13 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.md,
   },
   quickActionWrapper: {
     alignItems: 'center',
-    width: '22%',
+    width: '28%',
+    marginBottom: spacing.xs,
   },
   quickAction: {
     width: 60,

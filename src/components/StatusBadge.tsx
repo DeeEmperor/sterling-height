@@ -33,6 +33,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         return { bg: colors.infoLight, text: '#1E40AF' };
       case 'denied':
         return { bg: colors.errorLight, text: colors.error };
+      case 'active':
+        return { bg: colors.successLight, text: '#065F46' };
+      case 'exhausted':
+        return { bg: colors.errorLight, text: colors.error };
       default:
         return { bg: colors.surfaceLight, text: colors.textSecondary };
     }

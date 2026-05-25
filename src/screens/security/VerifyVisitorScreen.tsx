@@ -18,9 +18,9 @@ import {
 import { Button, Card, StatusBadge } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius, shadows } from '../../theme';
-import { visitorService } from '../../services';
+import { visitorService, eventPassService } from '../../services';
 import { formatDate, formatTime } from '../../utils/helpers';
-import { Visitor } from '../../types';
+import { Visitor, EventPass } from '../../types';
 import { CameraScanner } from './CameraScanner';
 
 const CODE_LENGTH = 6;
@@ -29,11 +29,13 @@ export const VerifyVisitorScreen: React.FC = () => {
   const [code, setCode] = useState<string[]>(new Array(CODE_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
   const [visitor, setVisitor] = useState<Visitor | null>(null);
+  const [eventPass, setEventPass] = useState<EventPass | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOutdated, setIsOutdated] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [modalAction, setModalAction] = useState<'entered' | 'denied' | null>(null);
   const [processedVisitor, setProcessedVisitor] = useState<Visitor | null>(null);
+  const [processedEventPass, setProcessedEventPass] = useState<EventPass | null>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [mockScannerVisible, setMockScannerVisible] = useState(false);
   const [mockScannedCode, setMockScannedCode] = useState('');
@@ -79,8 +81,10 @@ export const VerifyVisitorScreen: React.FC = () => {
     setLoading(true);
     setError(null);
     setVisitor(null);
+    setEventPass(null);
 
     try {
+      // First try regular visitor verification
       const result = await visitorService.verifyVisitorByCode(accessCode);
       
       if (result.visitor) {
@@ -92,8 +96,21 @@ export const VerifyVisitorScreen: React.FC = () => {
           setIsOutdated(false);
         }
       } else {
-        setError(result.message);
-        setIsOutdated(false);
+        // Fall back to Event Pass verification
+        const eventResult = await eventPassService.verifyEventPassByCode(accessCode);
+        
+        if (eventResult.eventPass) {
+          setEventPass(eventResult.eventPass);
+          if (!eventResult.success) {
+            setIsOutdated(true);
+            setError(eventResult.message);
+          } else {
+            setIsOutdated(false);
+          }
+        } else {
+          setError(eventResult.message || 'Invalid access code');
+          setIsOutdated(false);
+        }
       }
     } catch (err) {
       setError('Failed to verify code');
@@ -152,9 +169,44 @@ export const VerifyVisitorScreen: React.FC = () => {
     }
   };
 
+  const handleEventPassAction = async (action: 'entered' | 'denied') => {
+    if (!eventPass) return;
+
+    setLoading(true);
+    try {
+      if (action === 'entered') {
+        const result = await eventPassService.checkInEventPass(eventPass.id, `Guest check-in ${eventPass.entriesUsed + 1} of ${eventPass.maxEntries}`);
+        if (result.success && result.eventPass) {
+          setProcessedEventPass(result.eventPass);
+          setModalAction('entered');
+          setSuccessModalVisible(true);
+        } else {
+          if (Platform.OS === 'web') {
+            window.alert(result.message);
+          } else {
+            Alert.alert('Error', result.message);
+          }
+        }
+      } else {
+        setProcessedEventPass(eventPass);
+        setModalAction('denied');
+        setSuccessModalVisible(true);
+      }
+    } catch (err) {
+      if (Platform.OS === 'web') {
+        window.alert('Failed to check in guest');
+      } else {
+        Alert.alert('Error', 'Failed to check in guest');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setCode(new Array(CODE_LENGTH).fill(''));
     setVisitor(null);
+    setEventPass(null);
     setError(null);
     setIsOutdated(false);
     inputRefs.current[0]?.focus();
@@ -190,12 +242,12 @@ export const VerifyVisitorScreen: React.FC = () => {
           ))}
         </View>
 
-        {error && !visitor && <Text style={styles.errorText}>{error}</Text>}
+        {error && !visitor && !eventPass && <Text style={styles.errorText}>{error}</Text>}
 
         <Button
           title="Verify Code"
           onPress={() => handleVerify()}
-          loading={loading && !visitor}
+          loading={loading && !visitor && !eventPass}
           fullWidth
           size="large"
           style={styles.verifyButton}
@@ -282,6 +334,80 @@ export const VerifyVisitorScreen: React.FC = () => {
             />
           </Card>
         )}
+
+        {/* Event Pass Details */}
+        {eventPass && (
+          <Card style={styles.visitorCard}>
+            <View style={styles.visitorHeader}>
+              <Text style={styles.visitorName}>🎉 Event: {eventPass.eventName}</Text>
+              <StatusBadge status={eventPass.status} size="medium" />
+            </View>
+
+            <View style={styles.detailsGrid}>
+              <DetailItem label="Visiting" value={eventPass.residentName} />
+              <DetailItem label="Unit" value={eventPass.unitNumber} />
+              <DetailItem label="Date" value={formatDate(eventPass.visitDate)} />
+              <DetailItem
+                label="Time Window"
+                value={`${formatTime(eventPass.timeWindowStart)} - ${formatTime(eventPass.timeWindowEnd)}`}
+              />
+              <DetailItem 
+                label="Entries Used" 
+                value={`${eventPass.entriesUsed} of ${eventPass.maxEntries} guests`} 
+              />
+            </View>
+
+            {isOutdated && (
+              <View style={styles.outdatedWarning}>
+                <Text style={styles.outdatedWarningTitle}>⚠️ INVALID DATE / LIMIT EXHAUSTED</Text>
+                <Text style={styles.outdatedWarningText}>
+                  This event pass is either not valid for today or the maximum entries limit has been reached.
+                  Please decline entry.
+                </Text>
+              </View>
+            )}
+
+            {/* Action Buttons */}
+            {eventPass.status === 'active' && eventPass.entriesUsed < eventPass.maxEntries && (
+              <View style={styles.actionButtons}>
+                {!isOutdated && (
+                  <Button
+                    title="✓ Admit Guest"
+                    onPress={() => handleEventPassAction('entered')}
+                    loading={loading}
+                    size="large"
+                    style={styles.enterButton}
+                    fullWidth
+                  />
+                )}
+                <Button
+                  title={isOutdated ? "✗ Decline Entry (Mark DENIED)" : "✗ Mark DENIED"}
+                  onPress={() => handleEventPassAction('denied')}
+                  loading={loading}
+                  variant="danger"
+                  size="large"
+                  fullWidth
+                />
+              </View>
+            )}
+
+            {(eventPass.status !== 'active' || eventPass.entriesUsed >= eventPass.maxEntries) && (
+              <View style={styles.statusMessage}>
+                <Text style={styles.statusMessageText}>
+                  This event pass is no longer active or entries are fully exhausted
+                </Text>
+              </View>
+            )}
+
+            <Button
+              title="Verify Another"
+              onPress={resetForm}
+              variant="outline"
+              fullWidth
+              style={styles.resetButton}
+            />
+          </Card>
+        )}
       </ScrollView>
 
       {/* Success Modal */}
@@ -303,22 +429,32 @@ export const VerifyVisitorScreen: React.FC = () => {
             </View>
 
             <Text style={styles.modalSuccessTitle}>
-              {modalAction === 'entered' ? 'Visitor Admitted' : 'Entry Declined'}
+              {modalAction === 'entered' 
+                ? (processedEventPass ? 'Guest Checked In' : 'Visitor Admitted') 
+                : 'Entry Declined'}
             </Text>
             
             <Text style={styles.modalSuccessSubtitle}>
-              {processedVisitor ? `${processedVisitor.name} has been marked as ${modalAction === 'entered' ? 'entered' : 'denied'}.` : ''}
+              {processedVisitor 
+                ? `${processedVisitor.name} has been marked as ${modalAction === 'entered' ? 'entered' : 'denied'}.` 
+                : processedEventPass 
+                  ? `Guest admitted for event "${processedEventPass.eventName}" (${processedEventPass.entriesUsed}/${processedEventPass.maxEntries}).` 
+                  : ''}
             </Text>
 
-            {processedVisitor && (
+            {(processedVisitor || processedEventPass) && (
               <View style={styles.modalDetails}>
                 <View style={styles.modalDetailRow}>
                   <Text style={styles.modalDetailLabel}>Resident</Text>
-                  <Text style={styles.modalDetailValue}>{processedVisitor.residentName}</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {processedVisitor ? processedVisitor.residentName : processedEventPass?.residentName}
+                  </Text>
                 </View>
                 <View style={styles.modalDetailRow}>
                   <Text style={styles.modalDetailLabel}>Unit</Text>
-                  <Text style={styles.modalDetailValue}>{processedVisitor.unitNumber}</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {processedVisitor ? processedVisitor.unitNumber : processedEventPass?.unitNumber}
+                  </Text>
                 </View>
                 {modalAction === 'entered' && (
                   <View style={styles.modalDetailRow}>
@@ -337,7 +473,9 @@ export const VerifyVisitorScreen: React.FC = () => {
                 setSuccessModalVisible(false);
                 setCode(new Array(CODE_LENGTH).fill(''));
                 setVisitor(null);
+                setEventPass(null);
                 setProcessedVisitor(null);
+                setProcessedEventPass(null);
                 setModalAction(null);
                 setTimeout(() => {
                   inputRefs.current[0]?.focus();
