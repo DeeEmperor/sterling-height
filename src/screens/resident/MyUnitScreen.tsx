@@ -8,10 +8,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, StatusBadge, Loading } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius, shadows } from '../../theme';
@@ -22,6 +22,7 @@ import { Unit, EstateDue } from '../../types';
 
 export const MyUnitScreen: React.FC = () => {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unit, setUnit] = useState<Unit | null>(null);
@@ -69,16 +70,16 @@ export const MyUnitScreen: React.FC = () => {
 
   if (!unit) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Unable to load unit information</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -178,7 +179,7 @@ export const MyUnitScreen: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

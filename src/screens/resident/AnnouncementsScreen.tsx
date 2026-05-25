@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnnouncementCard, Loading, EmptyState } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius } from '../../theme';
@@ -23,6 +24,7 @@ import { Announcement } from '../../types';
 import { formatDateTime } from '../../utils/helpers';
 
 export const AnnouncementsScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -56,7 +58,7 @@ export const AnnouncementsScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Announcements</Text>
         <Text style={styles.subtitle}>{announcements.length} announcement(s)</Text>
@@ -124,7 +126,7 @@ export const AnnouncementsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

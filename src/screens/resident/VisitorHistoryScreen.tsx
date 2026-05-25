@@ -12,6 +12,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { VisitorCard, EventPassCard, Loading, EmptyState, Button } from '../../components';
 import { colors } from '../../theme/colors';
@@ -23,6 +24,7 @@ import { Visitor, EventPass } from '../../types';
 export const VisitorHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   const [activeTab, setActiveTab] = useState<'single' | 'event'>('single');
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export const VisitorHistoryScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Visitors</Text>
@@ -166,7 +168,7 @@ export const VisitorHistoryScreen: React.FC = () => {
           />
         )
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
