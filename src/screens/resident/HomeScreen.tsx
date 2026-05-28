@@ -10,6 +10,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { colors } from '../../theme/colors';
 import { spacing, borderRadius, shadows } from '../../theme';
 import { useAuth } from '../../context';
 import { visitorService, announcementService, unitService, eventPassService } from '../../services';
+import { triggerAlarm } from '../../services/alarm';
 import { getGreeting, formatDate } from '../../utils/helpers';
 import { Unit, Visitor, Announcement, EstateDue } from '../../types';
 
@@ -87,6 +89,29 @@ export const HomeScreen: React.FC = () => {
   if (loading) {
     return <Loading message="Loading..." />;
   }
+
+  const handleTriggerAlarm = () => {
+    Alert.alert(
+      'EMERGENCY ALARM',
+      'Are you sure you want to trigger a security alarm? Security agents will be dispatched to your unit immediately.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'TRIGGER ALARM', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await triggerAlarm();
+              Alert.alert('Alarm Triggered', 'Security has been notified.');
+            } catch (error) {
+              console.error('Alarm Error:', error);
+              Alert.alert('Error', 'Failed to trigger alarm. Please contact security directly.');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -209,6 +234,15 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* EMERGENCY FAB */}
+      <TouchableOpacity 
+        style={[styles.emergencyFab, { bottom: insets.bottom + spacing.lg }]} 
+        onPress={handleTriggerAlarm}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="warning" size={32} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -444,6 +478,18 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.borderLight,
     marginLeft: 72, // Aligns with text
+  },
+  emergencyFab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#DC2626', // error red
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.medium,
+    elevation: 8,
   },
 });
 
